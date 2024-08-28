@@ -1,6 +1,6 @@
 services:
   browser:
     build:
-      context: ./lix-az-browser
+      context: .
       dockerfile: Dockerfile
     restart: always
