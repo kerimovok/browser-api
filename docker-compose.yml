@@ -1,0 +1,8 @@
+services:
+  browser:
+    build:
+      context: ./lix-az-browser
+      dockerfile: Dockerfile
+    restart: always
+    networks:
+      - app-network
