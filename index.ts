@@ -17,11 +17,7 @@ const basePuppeteerOptions = {
 	args: ['--no-sandbox', '--disable-setuid-sandbox'],
 }
 
-// API Routes
-const apiRouter = express.Router()
-app.use('/api', apiRouter)
 const v1Router = express.Router()
-apiRouter.use('/v1', v1Router)
 
 v1Router.post('/screenshot', async (req, res) => {
 	const { url, viewportWidth, viewportHeight, userAgent, extraHTTPHeaders } =
@@ -95,6 +91,8 @@ v1Router.post('/metadata', async (req, res) => {
 		}
 	}
 })
+
+app.use('/api/v1', v1Router)
 
 app.listen(port, () => {
 	console.log(`Server is running on http://0.0.0.0:${port}`)
