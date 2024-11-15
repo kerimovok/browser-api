@@ -1,90 +1,101 @@
-import puppeteer from "puppeteer";
-import express from "express";
-import bodyParser from "body-parser";
-import cors from "cors";
+import puppeteer from 'puppeteer'
+import express from 'express'
+import bodyParser from 'body-parser'
+import cors from 'cors'
 
-const app = express();
-const port = process.env.PORT || 3001;
-app.use(bodyParser.json());
-app.use(cors());
+const app = express()
+const port = process.env.PORT || 3001
+app.use(bodyParser.json())
+app.use(cors())
 
 const basePuppeteerOptions = {
-  headless: true,
-  executablePath:
-    process.env.NODE_ENV === "production"
-      ? process.env.PUPPETEER_EXECUTABLE_PATH
-      : puppeteer.executablePath(),
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
-};
+	headless: true,
+	executablePath:
+		process.env.NODE_ENV === 'production'
+			? process.env.PUPPETEER_EXECUTABLE_PATH
+			: puppeteer.executablePath(),
+	args: ['--no-sandbox', '--disable-setuid-sandbox'],
+}
 
-app.post("/screenshot", async (req, res) => {
-  const { url, viewportWidth, viewportHeight, userAgent, extraHTTPHeaders } =
-    req.body;
-  let browser;
+// API Routes
+const apiRouter = express.Router()
+app.use('/api', apiRouter)
+const v1Router = express.Router()
+apiRouter.use('/v1', v1Router)
 
-  try {
-    browser = await puppeteer.launch(basePuppeteerOptions);
-    const page = await browser.newPage();
+v1Router.post('/screenshot', async (req, res) => {
+	const { url, viewportWidth, viewportHeight, userAgent, extraHTTPHeaders } =
+		req.body
+	let browser
 
-    if (viewportWidth && viewportHeight) {
-      await page.setViewport({ width: viewportWidth, height: viewportHeight });
-    }
+	try {
+		browser = await puppeteer.launch(basePuppeteerOptions)
+		const page = await browser.newPage()
 
-    if (userAgent) {
-      await page.setUserAgent(userAgent);
-    }
+		if (viewportWidth && viewportHeight) {
+			await page.setViewport({
+				width: viewportWidth,
+				height: viewportHeight,
+			})
+		}
 
-    if (extraHTTPHeaders) {
-      await page.setExtraHTTPHeaders(extraHTTPHeaders);
-    }
+		if (userAgent) {
+			await page.setUserAgent(userAgent)
+		}
 
-    await page.goto(url, { waitUntil: "networkidle2" });
+		if (extraHTTPHeaders) {
+			await page.setExtraHTTPHeaders(extraHTTPHeaders)
+		}
 
-    const screenshotBuffer = await page.screenshot({ encoding: "base64" });
-    res.send({ image: screenshotBuffer });
-  } catch (error) {
-    console.error("Error taking screenshot:", error);
-    res.status(500).send({ error: "Failed to take screenshot" });
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
-  }
-});
+		await page.goto(url, { waitUntil: 'networkidle2' })
 
-app.post("/metadata", async (req, res) => {
-  let browser;
+		const screenshotBuffer = await page.screenshot({ encoding: 'base64' })
+		res.send({ image: screenshotBuffer })
+	} catch (error) {
+		console.error('Error taking screenshot:', error)
+		res.status(500).send({ error: 'Failed to take screenshot' })
+	} finally {
+		if (browser) {
+			await browser.close()
+		}
+	}
+})
 
-  try {
-    browser = await puppeteer.launch(basePuppeteerOptions);
-    const page = await browser.newPage();
-    await page.goto(req.body.url, { waitUntil: "networkidle2" });
+v1Router.post('/metadata', async (req, res) => {
+	let browser
 
-    const metadata = await page.evaluate(() => {
-      const getMetaContent = (name: string) =>
-        document
-          .querySelector(`meta[property='og:${name}']`)
-          ?.getAttribute("content") ||
-        document.querySelector(`meta[name='${name}']`)?.getAttribute("content");
+	try {
+		browser = await puppeteer.launch(basePuppeteerOptions)
+		const page = await browser.newPage()
+		await page.goto(req.body.url, { waitUntil: 'networkidle2' })
 
-      return {
-        ogTitle: getMetaContent("title") || document.title,
-        ogDescription: getMetaContent("description"),
-        ogImage: getMetaContent("image"),
-      };
-    });
+		const metadata = await page.evaluate(() => {
+			const getMetaContent = (name: string) =>
+				document
+					.querySelector(`meta[property='og:${name}']`)
+					?.getAttribute('content') ||
+				document
+					.querySelector(`meta[name='${name}']`)
+					?.getAttribute('content')
 
-    res.send(metadata);
-  } catch (error) {
-    console.error("Error extracting metadata:", error);
-    res.status(500).send({ error: "Failed to extract metadata" });
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
-  }
-});
+			return {
+				ogTitle: getMetaContent('title') || document.title,
+				ogDescription: getMetaContent('description'),
+				ogImage: getMetaContent('image'),
+			}
+		})
+
+		res.send(metadata)
+	} catch (error) {
+		console.error('Error extracting metadata:', error)
+		res.status(500).send({ error: 'Failed to extract metadata' })
+	} finally {
+		if (browser) {
+			await browser.close()
+		}
+	}
+})
 
 app.listen(port, () => {
-  console.log(`Server is running on http://0.0.0.0:${port}`);
-});
+	console.log(`Server is running on http://0.0.0.0:${port}`)
+})
