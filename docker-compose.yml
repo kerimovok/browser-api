@@ -1,6 +1,0 @@
-services:
-  browser:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
