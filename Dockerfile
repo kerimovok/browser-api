@@ -13,13 +13,12 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
-COPY --from=prerelease /usr/src/app/src ./src
 
 ENV NODE_ENV=production
 
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/index.ts .
+COPY --from=prerelease /usr/src/app/src ./src
 COPY --from=prerelease /usr/src/app/package.json .
 COPY .env .
 
@@ -36,4 +35,4 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 USER root
 RUN chown -R bun:bun /usr/src/app/node_modules
 USER bun
-ENTRYPOINT [ "bun", "run", "index.ts" ]
+ENTRYPOINT [ "bun", "run", "src/index.ts" ]
