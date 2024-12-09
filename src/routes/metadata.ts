@@ -1,8 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { BrowserManager } from '../utils/browser'
-import type { BaseRequest } from '../types/common'
-
-export interface MetadataRequest extends BaseRequest {}
+import type { MetadataRequest } from '../types/common'
 
 const router = Router()
 
@@ -12,10 +10,8 @@ router.post(
 		const browserManager = new BrowserManager()
 
 		try {
-			const { url } = req.body
 			const page = await browserManager.createPage()
-
-			await page.goto(url, BrowserManager.getNavigationOptions())
+			await browserManager.setupPage(page, req.body)
 
 			const metadata = await page.evaluate(() => {
 				const getMetaContent = (name: string) => {

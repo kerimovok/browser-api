@@ -1,27 +1,22 @@
 import { Router, type Request, type Response } from 'express'
 import { BrowserManager } from '../utils/browser'
-import type { BaseRequest } from '../types/common'
+import type { PDFRequest } from '../types/common'
 
-export interface PDFRequest extends BaseRequest {
-	format?: string
-	margin?: {
-		top?: string
-		right?: string
-		bottom?: string
-		left?: string
-	}
-	printBackground?: boolean
-}
 const router = Router()
 
 router.post('/pdf', async (req: Request<{}, {}, PDFRequest>, res: Response) => {
 	const browserManager = new BrowserManager()
 
 	try {
-		const { url, format = 'A4', margin, printBackground = true } = req.body
+		const {
+			format = 'A4',
+			margin,
+			printBackground = true,
+			...baseOptions
+		} = req.body
 		const page = await browserManager.createPage()
 
-		await page.goto(url, BrowserManager.getNavigationOptions())
+		await browserManager.setupPage(page, baseOptions)
 
 		const pdfBuffer = await page.pdf({
 			format: format as any,

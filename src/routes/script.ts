@@ -1,10 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { BrowserManager } from '../utils/browser'
-import type { BaseRequest } from '../types/common'
-
-export interface ScriptRequest extends BaseRequest {
-	script: string
-}
+import type { ScriptRequest } from '../types/common'
 
 const router = Router()
 
@@ -14,16 +10,12 @@ router.post(
 		const browserManager = new BrowserManager()
 
 		try {
-			const { url, script, waitForSelector } = req.body
+			const { script, ...baseOptions } = req.body
 			const page = await browserManager.createPage()
 
-			await page.goto(url, BrowserManager.getNavigationOptions())
-
-			if (waitForSelector) {
-				await page.waitForSelector(waitForSelector)
-			}
-
+			await browserManager.setupPage(page, baseOptions)
 			const result = await page.evaluate(script)
+
 			res.send({ result })
 		} catch (error) {
 			console.error('Error executing script:', error)

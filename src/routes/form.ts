@@ -1,12 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { BrowserManager } from '../utils/browser'
-import type { BaseRequest } from '../types/common'
-
-export interface FormRequest extends BaseRequest {
-	formSelector: string
-	formData: Record<string, string>
-	submitButtonSelector: string
-}
+import type { FormRequest } from '../types/common'
 
 const router = Router()
 
@@ -16,12 +10,15 @@ router.post(
 		const browserManager = new BrowserManager()
 
 		try {
-			const { url, formSelector, formData, submitButtonSelector } =
-				req.body
+			const {
+				formSelector,
+				formData,
+				submitButtonSelector,
+				...baseOptions
+			} = req.body
 			const page = await browserManager.createPage()
 
-			await page.goto(url, BrowserManager.getNavigationOptions())
-
+			await browserManager.setupPage(page, baseOptions)
 			await page.waitForSelector(formSelector)
 
 			// Fill form fields

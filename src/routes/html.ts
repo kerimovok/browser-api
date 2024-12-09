@@ -1,8 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { BrowserManager } from '../utils/browser'
-import type { BaseRequest } from '../types/common'
-
-export interface HTMLRequest extends BaseRequest {}
+import type { HTMLRequest } from '../types/common'
 
 const router = Router()
 
@@ -12,14 +10,8 @@ router.post(
 		const browserManager = new BrowserManager()
 
 		try {
-			const { url, waitForSelector } = req.body
 			const page = await browserManager.createPage()
-
-			await page.goto(url, BrowserManager.getNavigationOptions())
-
-			if (waitForSelector) {
-				await page.waitForSelector(waitForSelector)
-			}
+			await browserManager.setupPage(page, req.body)
 
 			const html = await page.content()
 			res.send({ html })

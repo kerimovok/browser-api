@@ -1,11 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { BrowserManager } from '../utils/browser'
-import type { BaseRequest } from '../types/common'
-
-export interface ScreenshotRequest extends BaseRequest {
-	viewportWidth?: number
-	viewportHeight?: number
-}
+import type { ScreenshotRequest } from '../types/common'
 
 const router = Router()
 
@@ -15,13 +10,7 @@ router.post(
 		const browserManager = new BrowserManager()
 
 		try {
-			const {
-				url,
-				viewportWidth,
-				viewportHeight,
-				userAgent,
-				extraHTTPHeaders,
-			} = req.body
+			const { viewportWidth, viewportHeight, ...baseOptions } = req.body
 			const page = await browserManager.createPage()
 
 			if (viewportWidth && viewportHeight) {
@@ -31,15 +20,7 @@ router.post(
 				})
 			}
 
-			if (userAgent) {
-				await page.setUserAgent(userAgent)
-			}
-
-			if (extraHTTPHeaders) {
-				await page.setExtraHTTPHeaders(extraHTTPHeaders)
-			}
-
-			await page.goto(url, BrowserManager.getNavigationOptions())
+			await browserManager.setupPage(page, baseOptions)
 			const screenshotBuffer = await page.screenshot({
 				encoding: 'base64',
 			})
