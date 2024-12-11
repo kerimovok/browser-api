@@ -2,36 +2,41 @@ FROM oven/bun:1 as base
 WORKDIR /usr/src/app
 
 FROM base AS install
-COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile && \
-    cp -r node_modules /tmp/dev_modules && \
-    bun install --frozen-lockfile --production && \
-    cp -r node_modules /tmp/prod_modules
+RUN mkdir -p /temp/dev
+COPY package.json bun.lockb /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
+
+RUN mkdir -p /temp/prod
+COPY package.json bun.lockb /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
 
 FROM base AS prerelease
-COPY --from=install /tmp/dev_modules ./node_modules
-COPY . .
+COPY --from=install /temp/dev/node_modules node_modules
+COPY package.json tsconfig.json ./
+COPY src ./src
+RUN bun run build
 
 FROM base AS release
-COPY --from=install /tmp/prod_modules ./node_modules
-COPY --from=prerelease /usr/src/app/src ./src
-COPY --from=prerelease /usr/src/app/package.json .
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=prerelease /usr/src/app/dist ./dist
+COPY --from=prerelease /usr/src/app/package.json ./
 
-ENV NODE_ENV=production \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    gnupg \
-    wget \
-    && wget -q -O- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends google-chrome-stable \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && chown -R bun:bun /usr/src/app/node_modules
+        gnupg \
+        wget \
+        google-chrome-stable && \
+    wget -q -O- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    apt-get update && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    chown -R bun:bun /usr/src/app/node_modules
+
+EXPOSE 3004
 
 USER bun
-ENTRYPOINT [ "bun", "start" ]
+ENTRYPOINT [ "bun", "dist/index.js" ]
