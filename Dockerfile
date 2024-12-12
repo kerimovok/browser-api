@@ -34,9 +34,5 @@ RUN apt-get update && \
     apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    chown -R bun:bun /usr/src/app/node_modules
 
-EXPOSE 3004
-
-USER bun
-ENTRYPOINT [ "bun", "dist/index.js" ]
+ENTRYPOINT [ "bun", "start:prod" ]
