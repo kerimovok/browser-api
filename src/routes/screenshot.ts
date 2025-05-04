@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import { BrowserManager } from '../utils/browser'
+import { BrowserPool } from '../utils/browser-pool'
 import type { ScreenshotRequest } from '../types/common'
 
 const router = Router()
@@ -7,7 +7,8 @@ const router = Router()
 router.post(
 	'/screenshot',
 	async (req: Request<{}, {}, ScreenshotRequest>, res: Response) => {
-		const browserManager = new BrowserManager()
+		const browserManager =
+			await BrowserPool.getInstance().getBrowserManager()
 
 		try {
 			const { viewportWidth, viewportHeight, ...baseOptions } = req.body
@@ -30,7 +31,7 @@ router.post(
 			console.error('Error taking screenshot:', error)
 			res.status(500).send({ error: 'Failed to take screenshot' })
 		} finally {
-			await browserManager.close()
+			BrowserPool.getInstance().releaseBrowserManager(browserManager)
 		}
 	}
 )

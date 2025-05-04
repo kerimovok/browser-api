@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import { BrowserManager } from '../utils/browser'
+import { BrowserPool } from '../utils/browser-pool'
 import type { FormRequest } from '../types/common'
 
 const router = Router()
@@ -7,7 +7,8 @@ const router = Router()
 router.post(
 	'/form',
 	async (req: Request<{}, {}, FormRequest>, res: Response) => {
-		const browserManager = new BrowserManager()
+		const browserManager =
+			await BrowserPool.getInstance().getBrowserManager()
 
 		try {
 			const {
@@ -36,7 +37,7 @@ router.post(
 			console.error('Error submitting form:', error)
 			res.status(500).send({ error: 'Failed to submit form' })
 		} finally {
-			await browserManager.close()
+			BrowserPool.getInstance().releaseBrowserManager(browserManager)
 		}
 	}
 )

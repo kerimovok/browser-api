@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import { BrowserManager } from '../utils/browser'
+import { BrowserPool } from '../utils/browser-pool'
 import type { HTMLRequest } from '../types/common'
 
 const router = Router()
@@ -7,7 +7,8 @@ const router = Router()
 router.post(
 	'/html',
 	async (req: Request<{}, {}, HTMLRequest>, res: Response) => {
-		const browserManager = new BrowserManager()
+		const browserManager =
+			await BrowserPool.getInstance().getBrowserManager()
 
 		try {
 			const page = await browserManager.createPage()
@@ -19,7 +20,7 @@ router.post(
 			console.error('Error fetching HTML:', error)
 			res.status(500).send({ error: 'Failed to fetch HTML' })
 		} finally {
-			await browserManager.close()
+			BrowserPool.getInstance().releaseBrowserManager(browserManager)
 		}
 	}
 )

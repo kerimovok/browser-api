@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import { BrowserManager } from '../utils/browser'
+import { BrowserPool } from '../utils/browser-pool'
 import type { ScriptRequest } from '../types/common'
 
 const router = Router()
@@ -7,7 +7,8 @@ const router = Router()
 router.post(
 	'/script',
 	async (req: Request<{}, {}, ScriptRequest>, res: Response) => {
-		const browserManager = new BrowserManager()
+		const browserManager =
+			await BrowserPool.getInstance().getBrowserManager()
 
 		try {
 			const { script, ...baseOptions } = req.body
@@ -21,7 +22,7 @@ router.post(
 			console.error('Error executing script:', error)
 			res.status(500).send({ error: 'Failed to execute script' })
 		} finally {
-			await browserManager.close()
+			BrowserPool.getInstance().releaseBrowserManager(browserManager)
 		}
 	}
 )

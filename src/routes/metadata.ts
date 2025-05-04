@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import { BrowserManager } from '../utils/browser'
+import { BrowserPool } from '../utils/browser-pool'
 import type { MetadataRequest } from '../types/common'
 
 const router = Router()
@@ -7,7 +7,8 @@ const router = Router()
 router.post(
 	'/metadata',
 	async (req: Request<{}, {}, MetadataRequest>, res: Response) => {
-		const browserManager = new BrowserManager()
+		const browserManager =
+			await BrowserPool.getInstance().getBrowserManager()
 
 		try {
 			const page = await browserManager.createPage()
@@ -38,7 +39,7 @@ router.post(
 			console.error('Error fetching metadata:', error)
 			res.status(500).send({ error: 'Failed to fetch metadata' })
 		} finally {
-			await browserManager.close()
+			BrowserPool.getInstance().releaseBrowserManager(browserManager)
 		}
 	}
 )
