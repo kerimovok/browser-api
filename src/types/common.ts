@@ -1,9 +1,12 @@
+import type { GoToOptions } from 'puppeteer'
+
 export interface BaseRequest {
 	url: string
 	userAgent?: string
 	extraHTTPHeaders?: Record<string, string>
 	timeout?: number
 	waitForSelector?: string
+	goToOptions?: GoToOptions
 }
 
 export interface ScreenshotRequest extends BaseRequest {

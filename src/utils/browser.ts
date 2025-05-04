@@ -58,7 +58,10 @@ export class BrowserManager {
 			page.setDefaultTimeout(options.timeout)
 		}
 
-		await page.goto(options.url, BrowserManager.navigationOptions)
+		await page.goto(options.url, {
+			...BrowserManager.navigationOptions,
+			...options.goToOptions,
+		})
 
 		if (options.waitForSelector) {
 			await page.waitForSelector(options.waitForSelector)
